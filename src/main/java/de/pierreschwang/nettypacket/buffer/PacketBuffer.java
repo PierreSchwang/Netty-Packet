@@ -36,6 +36,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.UUID;
 
@@ -71,15 +72,39 @@ public class PacketBuffer extends ByteBuf {
     }
 
     /**
-     * Gets a uuid (2x 8-byte long) at the current {@code readerIndex} using {@link #readLong()}
+     * Gets an uuid (2x 8-byte long) at the current {@code readerIndex} using {@link #readLong()}
      *
      * @throws IndexOutOfBoundsException if {@code this.readableBytes} is less than {@code 16}
      */
     public UUID readUUID() {
         if (readableBytes() < 16) {
-            throw new IndexOutOfBoundsException("Not enough readableBytes to read UUID: " + readableBytes());
+            throw new IndexOutOfBoundsException("Not enough readableBytes to read UUID: " + readableBytes() + " / 16");
         }
         return new UUID(readLong(), readLong());
+    }
+
+    /**
+     * Write a variable-length utf8 string into the buffer.
+     *
+     * @param value The string to write
+     */
+    public void writeUTF8(String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        writeInt(bytes.length);
+        writeBytes(bytes);
+    }
+
+    /**
+     * Get a variable-length utf8 string from the buffer.
+     *
+     * @return The read string or a thrown {@link IndexOutOfBoundsException} if invalid format.
+     */
+    public String readUTF8() {
+        int length = readInt();
+        if (readableBytes() < length) {
+            throw new IndexOutOfBoundsException("Not enough readableBytes to read UTF8: " + readableBytes() + " / " + length);
+        }
+        return new String(readBytes(length).array(), StandardCharsets.UTF_8);
     }
 
     /**
