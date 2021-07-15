@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class PacketBufferTest {
@@ -57,7 +58,7 @@ public class PacketBufferTest {
         buffer.writeCollection(listOfData.stream().map(SimpleStringPacket::new).collect(Collectors.toList()));
 
         // Read all the data from the buffer and convert to string
-        List<SimpleStringPacket> readDataAsPacket = buffer.readCollection(SimpleStringPacket::new);
+        List<SimpleStringPacket> readDataAsPacket = buffer.readCollection((Supplier<SimpleStringPacket>) SimpleStringPacket::new);
         List<String> readDataAsStrings = readDataAsPacket.stream().map(SimpleStringPacket::getData).collect(Collectors.toList());
 
         // should equal

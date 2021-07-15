@@ -22,6 +22,8 @@
 
 package de.pierreschwang.nettypacket.buffer;
 
+import de.pierreschwang.nettypacket.io.CallableDecoder;
+import de.pierreschwang.nettypacket.io.CallableEncoder;
 import de.pierreschwang.nettypacket.io.Decoder;
 import de.pierreschwang.nettypacket.io.Encoder;
 import io.netty.buffer.ByteBuf;
@@ -45,6 +47,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -123,10 +127,7 @@ public class PacketBuffer extends ByteBuf {
      * @param <T>        The type of the encoder object.
      */
     public <T extends Encoder> void writeCollection(Collection<T> collection) {
-        writeInt(collection.size());
-        for (T entry : collection) {
-            entry.write(this);
-        }
+        writeCollection(collection, Encoder::write);
     }
 
     /**
@@ -137,14 +138,51 @@ public class PacketBuffer extends ByteBuf {
      * @return The read list filled with optional data.
      */
     public <T extends Decoder> List<T> readCollection(Supplier<T> factory) {
+        return readCollection(buffer -> {
+           T instance = factory.get();
+           instance.read(this);
+           return instance;
+        });
+    }
+
+    public <T> void writeCollection(Collection<T> collection, CallableEncoder<T> encoder) {
+        writeInt(collection.size());
+        for (T entry : collection) {
+            encoder.write(entry, this);
+        }
+    }
+
+    public <T> List<T> readCollection(CallableDecoder<T> decoder) {
         int size = readInt();
         List<T> data = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            T instance = factory.get();
-            instance.read(this);
-            data.add(instance);
+            data.add(decoder.read(this));
         }
         return data;
+    }
+
+    public void writeIntCollection(Collection<Integer> collection) {
+        writeCollection(collection, (data, buffer) -> buffer.writeInt(data));
+    }
+
+    public List<Integer> readIntCollection() {
+        return readCollection(PacketBuffer::readInt);
+    }
+
+    public void writeStringCollection(Collection<String> collection) {
+        writeCollection(collection, (data, buffer) -> buffer.writeUTF8(data));
+    }
+
+    public List<String> readStringCollection() {
+        return readCollection(PacketBuffer::readUTF8);
+    }
+
+    public void writeUuidCollection(Collection<UUID> collection) {
+        writeCollection(collection, (data, buffer) -> buffer.writeUUID(data));
+    }
+
+    public List<UUID> readUuidCollection() {
+        return readCollection(PacketBuffer::readUUID);
     }
 
     /**
