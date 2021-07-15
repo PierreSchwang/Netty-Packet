@@ -20,11 +20,33 @@
  *  SOFTWARE.
  */
 
-package de.pierreschwang.nettypacket;
+package de.pierreschwang.nettypacket.test.dummy;
 
-import de.pierreschwang.nettypacket.io.Decoder;
-import de.pierreschwang.nettypacket.io.Encoder;
+import de.pierreschwang.nettypacket.Packet;
+import de.pierreschwang.nettypacket.buffer.PacketBuffer;
 
-public abstract class Packet implements Encoder, Decoder {
+public class SimpleStringPacket extends Packet {
 
+    private String data;
+
+    public SimpleStringPacket() {
+    }
+
+    public SimpleStringPacket(String data) {
+        this.data = data;
+    }
+
+    @Override
+    public void read(PacketBuffer buffer) {
+        this.data = buffer.readUTF8();
+    }
+
+    @Override
+    public void write(PacketBuffer buffer) {
+        buffer.writeUTF8(data);
+    }
+
+    public String getData() {
+        return data;
+    }
 }

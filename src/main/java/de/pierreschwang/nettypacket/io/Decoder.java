@@ -20,11 +20,12 @@
  *  SOFTWARE.
  */
 
-package de.pierreschwang.nettypacket;
+package de.pierreschwang.nettypacket.io;
 
-import de.pierreschwang.nettypacket.io.Decoder;
-import de.pierreschwang.nettypacket.io.Encoder;
+import de.pierreschwang.nettypacket.buffer.PacketBuffer;
 
-public abstract class Packet implements Encoder, Decoder {
+public interface Decoder {
+
+    void read(PacketBuffer buffer);
 
 }

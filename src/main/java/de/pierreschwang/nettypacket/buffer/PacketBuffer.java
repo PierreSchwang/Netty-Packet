@@ -22,8 +22,11 @@
 
 package de.pierreschwang.nettypacket.buffer;
 
+import de.pierreschwang.nettypacket.io.Decoder;
+import de.pierreschwang.nettypacket.io.Encoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 
@@ -38,7 +41,11 @@ import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Wrapped {@link ByteBuf} with more features like UUIDs & VarInts
@@ -89,6 +96,9 @@ public class PacketBuffer extends ByteBuf {
      * @param value The string to write
      */
     public void writeUTF8(String value) {
+        if (value == null) {
+            value = "";
+        }
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         writeInt(bytes.length);
         writeBytes(bytes);
@@ -101,10 +111,40 @@ public class PacketBuffer extends ByteBuf {
      */
     public String readUTF8() {
         int length = readInt();
-        if (readableBytes() < length) {
-            throw new IndexOutOfBoundsException("Not enough readableBytes to read UTF8: " + readableBytes() + " / " + length);
+        byte[] data = new byte[length];
+        readBytes(data);
+        return new String(data, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Write a list of objects into the buffer, which can be encoded.
+     *
+     * @param collection The collection of data to store.
+     * @param <T>        The type of the encoder object.
+     */
+    public <T extends Encoder> void writeCollection(Collection<T> collection) {
+        writeInt(collection.size());
+        for (T entry : collection) {
+            entry.write(this);
         }
-        return new String(readBytes(length).array(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Read a list of objects from the buffer, which can be encoded.
+     *
+     * @param factory The factory which creates an empty object based on {@code T}.
+     * @param <T>     The typo of the decoder object.
+     * @return The read list filled with optional data.
+     */
+    public <T extends Decoder> List<T> readCollection(Supplier<T> factory) {
+        int size = readInt();
+        List<T> data = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            T instance = factory.get();
+            instance.read(this);
+            data.add(instance);
+        }
+        return data;
     }
 
     /**
