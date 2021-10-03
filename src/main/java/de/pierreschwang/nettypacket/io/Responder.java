@@ -39,7 +39,6 @@ public interface Responder {
 
     static Responder forId(Long sessionId, ChannelOutboundInvoker channelOutboundInvoker) {
         return packet -> {
-            System.out.println("Respond with " + sessionId);
             packet.setSessionId(sessionId);
             channelOutboundInvoker.writeAndFlush(packet);
         };

@@ -50,13 +50,11 @@ public class RespondingPacket<T extends Packet> {
     }
 
     public void send(ChannelOutboundInvoker invoker) {
-        System.out.println("Send " + toSend + " to " + invoker);
         invoker.writeAndFlush(toSend);
         pendingResponses.put(toSend.getSessionId(), new PendingResponse<>(responseType, callback, timeout));
     }
 
     public static void callReceive(Packet packet) {
-        System.out.println("Received " + packet.getSessionId() + " - " + packet.getClass().getSimpleName());
         if (!pendingResponses.containsKey(packet.getSessionId())) {
             return;
         }

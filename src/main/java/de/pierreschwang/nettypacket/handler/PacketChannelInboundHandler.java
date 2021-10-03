@@ -38,7 +38,6 @@ public class PacketChannelInboundHandler extends SimpleChannelInboundHandler<Pac
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Packet packet) throws Exception {
-        System.out.println("Received " + packet.toString() + " from " + channelHandlerContext.channel().remoteAddress().toString());
         RespondingPacket.callReceive(packet);
         eventRegistry.invoke(packet, channelHandlerContext);
     }
