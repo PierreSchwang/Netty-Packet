@@ -45,6 +45,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
             throw new EncoderException("Returned PacketId by registry is < 0");
         }
         byteBuf.writeInt(packetId);
+        byteBuf.writeLong(packet.getSessionId());
 
         // Dump packet data into wrapper packet
         PacketBuffer buffer = new PacketBuffer();

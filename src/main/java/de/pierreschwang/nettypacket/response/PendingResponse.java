@@ -20,38 +20,35 @@
  *  SOFTWARE.
  */
 
-package de.pierreschwang.nettypacket.handler;
+package de.pierreschwang.nettypacket.response;
 
 import de.pierreschwang.nettypacket.Packet;
-import de.pierreschwang.nettypacket.buffer.PacketBuffer;
-import de.pierreschwang.nettypacket.registry.IPacketRegistry;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.DecoderException;
 
-import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-public class PacketDecoder extends ByteToMessageDecoder {
+public class PendingResponse<T extends Packet> {
 
-    private final IPacketRegistry packetRegistry;
+    private final Long sent;
+    private final Consumer<T> responseCallable;
+    private final long timeout;
 
-    public PacketDecoder(IPacketRegistry packetRegistry) {
-        this.packetRegistry = packetRegistry;
+    public PendingResponse(Class<T> type, Consumer<T> responseCallable) {
+        this(type, responseCallable, TimeUnit.SECONDS.toMillis(10));
     }
 
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-        int packetId = byteBuf.readInt();
-        if (!packetRegistry.containsPacketId(packetId)) {
-            throw new DecoderException("Received invalid packet id");
-        }
-        long sessionId = byteBuf.readLong();
-        PacketBuffer buffer = new PacketBuffer(byteBuf.readBytes(byteBuf.readableBytes()));
-        Packet packet = packetRegistry.constructPacket(packetId);
-        packet.setSessionId(sessionId);
-        packet.read(buffer);
+    public PendingResponse(Class<T> type, Consumer<T> responseCallable, long timeout) {
+        this.timeout = timeout;
+        this.sent = System.currentTimeMillis();
+        this.responseCallable = responseCallable;
+    }
 
-        list.add(packet);
+    public void callResponseReceived(Packet packet) {
+        responseCallable.accept((T) packet);
+    }
+
+    public boolean isExpired() {
+        return System.currentTimeMillis() - sent > timeout;
     }
 
 }

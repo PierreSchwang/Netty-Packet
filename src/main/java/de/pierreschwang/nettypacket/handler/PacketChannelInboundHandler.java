@@ -24,6 +24,7 @@ package de.pierreschwang.nettypacket.handler;
 
 import de.pierreschwang.nettypacket.Packet;
 import de.pierreschwang.nettypacket.event.EventRegistry;
+import de.pierreschwang.nettypacket.response.RespondingPacket;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -37,6 +38,8 @@ public class PacketChannelInboundHandler extends SimpleChannelInboundHandler<Pac
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Packet packet) throws Exception {
+        System.out.println("Received " + packet.toString() + " from " + channelHandlerContext.channel().remoteAddress().toString());
+        RespondingPacket.callReceive(packet);
         eventRegistry.invoke(packet, channelHandlerContext);
     }
 

@@ -23,6 +23,7 @@
 package de.pierreschwang.nettypacket.event;
 
 import de.pierreschwang.nettypacket.Packet;
+import de.pierreschwang.nettypacket.io.Responder;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +41,7 @@ public class EventRegistry {
     public void invoke(Packet packet, ChannelHandlerContext ctx) {
         try {
             for (RegisteredPacketSubscriber subscriber : subscribers) {
-                subscriber.invoke(packet, ctx);
+                subscriber.invoke(packet, ctx, Responder.forId(packet.getSessionId(), ctx));
             }
         } catch (InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();

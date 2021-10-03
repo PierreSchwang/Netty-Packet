@@ -25,6 +25,20 @@ package de.pierreschwang.nettypacket;
 import de.pierreschwang.nettypacket.io.Decoder;
 import de.pierreschwang.nettypacket.io.Encoder;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public abstract class Packet implements Encoder, Decoder {
 
+    /**
+     * SessionID is used for identification of the packet for use with {@link de.pierreschwang.nettypacket.io.Responder}
+     */
+    private long sessionId = ThreadLocalRandom.current().nextLong();
+
+    public void setSessionId(long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public long getSessionId() {
+        return sessionId;
+    }
 }

@@ -23,6 +23,7 @@
 package de.pierreschwang.nettypacket.event;
 
 import de.pierreschwang.nettypacket.Packet;
+import de.pierreschwang.nettypacket.io.Responder;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.lang.reflect.InvocationTargetException;
@@ -43,16 +44,15 @@ public class RegisteredPacketSubscriber {
                 continue;
             }
             Class<? extends Packet> packetClass = null;
-            int ctxIndex = -1;
-            int index = -1;
             for (Parameter parameter : method.getParameters()) {
-                index++;
                 if (Packet.class.isAssignableFrom(parameter.getType())) {
                     packetClass = (Class<? extends Packet>) parameter.getType();
                     continue;
                 }
                 if (ChannelHandlerContext.class.isAssignableFrom(parameter.getType())) {
-                    ctxIndex = index;
+                    continue;
+                }
+                if (Responder.class.isAssignableFrom(parameter.getType())) {
                     continue;
                 }
                 throw new IllegalArgumentException("Invalid parameter for @PacketSubscriber: " + parameter.getType().getSimpleName());
@@ -61,18 +61,18 @@ public class RegisteredPacketSubscriber {
                 throw new IllegalArgumentException("Missing packet parameter for @PacketSubscriber");
             }
             handler.computeIfAbsent(packetClass, aClass -> new HashSet<>()).add(new InvokableEventMethod(
-                    subscriberClass, method, packetClass, ctxIndex
+                    subscriberClass, method, packetClass
             ));
         }
     }
 
-    public void invoke(Packet rawPacket, ChannelHandlerContext ctx) throws InvocationTargetException, IllegalAccessException {
+    public void invoke(Packet rawPacket, ChannelHandlerContext ctx, Responder responder) throws InvocationTargetException, IllegalAccessException {
         Set<InvokableEventMethod> methods = handler.get(rawPacket.getClass());
         if (methods == null) {
             return;
         }
         for (InvokableEventMethod method : methods) {
-            method.invoke(rawPacket, ctx);
+            method.invoke(rawPacket, ctx, responder);
         }
     }
 
